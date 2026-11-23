@@ -26,6 +26,7 @@ logs/
 test-results/
 artifacts/
 artifacts/browser-profile-*/
+/video-assets/
 data/
 workspaces/
 .worktrees/
