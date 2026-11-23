@@ -8,6 +8,7 @@
     "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "private": true,
+  "type": "module",
   "dependencies": {
     "@remotion/cli": "4.0.546",
     "@remotion/fonts": "4.0.546",
@@ -27,8 +28,10 @@
   },
   "scripts": {
     "assets": "node scripts/sync-assets.mjs",
+    "audio": "node scripts/synth/sample15.mjs",
     "dev": "remotion studio",
     "keyframes": "remotion still src/index.ts KF1-Hook out/keyframes/KF1-Hook.png && remotion still src/index.ts KF2-Teammates out/keyframes/KF2-Teammates.png && remotion still src/index.ts KF3-Finale out/keyframes/KF3-Finale.png",
+    "sample": "npm run audio && remotion render src/index.ts Sample15 out/sample-15s.mp4 && remotion render src/index.ts Sample15 out/sample-15s-sfx-only.mp4 --props=props/sfx-only.json",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"

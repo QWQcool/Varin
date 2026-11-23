@@ -7,10 +7,13 @@ npm install
 npm run assets      # 从仓库、node_modules 和系统字体同步 public/ 素材
 npm run dev         # Remotion Studio
 npm run keyframes   # 渲染三张静态关键帧到 out/keyframes/
+npm run sample      # 代码合成配乐，渲染 15 秒样片（带配乐 + 仅音效两版）到 out/
 ```
 
 - 脚本与关键帧：[docs/script.md](docs/script.md)
+- 制作设计：[docs/design.md](docs/design.md)
 - 视觉 tokens：`src/theme.ts`（全部取自产品主题与品牌 SVG）
+- 配乐与音效：`scripts/synth/`，零依赖代码合成，事件时间读取 `src/sample/timeline.ts`
 - `public/` 下的素材不入库，由 `scripts/sync-assets.mjs` 复制；Noto Sans SC 取自系统字体目录，
   其他系统可用 `NOTO_SANS_SC_PATH` 指定。
 - 真实界面截图由 `tools/promo-capture` 采集，输出在被忽略的 `video-assets/`。
