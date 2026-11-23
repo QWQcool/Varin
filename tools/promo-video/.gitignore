@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Ignore the output video from Git but not videos you import into src/.
+out
+
+# Copied by `npm run assets` from the repository, node_modules and system fonts.
+public/fonts
+public/brand
+public/cast
+public/logos
+public/ui
