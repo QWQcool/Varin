@@ -49,9 +49,9 @@ export const KF2Teammates: React.FC = () => {
         ))}
       </svg>
 
-      <AgentCard logo="logos/codex.svg" name="Codex" task="发布页面 · 改简介与配图" status="running" style={{ left: 120, top: 610 }} />
-      <AgentCard logo="logos/deepseek-harness.svg" name="DeepSeek Harness" task="用户反馈整理 · 214 条" status="done" style={{ left: 120, top: 720 }} />
-      <AgentCard logo="logos/claude-orange.svg" name="Claude Code" task="release-notes.md 校对" status="waiting" style={{ left: 120, top: 830 }} />
+      <AgentCard logo="logos/deepseek-harness.svg" name="DeepSeek Harness" task="回归测试 · 418 通过" status="done" style={{ left: 120, top: 610 }} />
+      <AgentCard logo="logos/codex.svg" name="Codex" task="auth 会话接口重构" status="running" style={{ left: 120, top: 720 }} />
+      <AgentCard logo="logos/claude-orange.svg" name="Claude Code" task="登录页重设计" status="waiting" style={{ left: 120, top: 830 }} />
 
       <Interactive.Div
         name="Chapter eyebrow"

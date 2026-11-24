@@ -14,7 +14,7 @@ export const T = {
   typeStep: 3,
   sentence: "你已经在用 Agent 了。",
   sentenceOut: 105,
-  /** DeepSeek Harness, Codex, Claude Code land on bars 3, 3.5 and 4. */
+  /** DeepSeek Harness (tests), Codex (backend), Claude Code (frontend) land on bars 3, 3.5 and 4. */
   termIn: [120, 150, 180],
   /** Each agent stalls on consecutive beats of bar 5. */
   stall: [240, 255, 270],

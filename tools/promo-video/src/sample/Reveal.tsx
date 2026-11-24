@@ -152,7 +152,7 @@ export const Reveal: React.FC = () => {
           translate: `0px ${interpolate(g, [sub, sub + 14], [18, 0], settle)}px`,
         }}
       >
-        一个对话，调度模型、Agent 和你的每台设备。
+        一个对话，调度模型、Agent 和你连上的每台设备。
       </Interactive.Div>
     </AbsoluteFill>
   );

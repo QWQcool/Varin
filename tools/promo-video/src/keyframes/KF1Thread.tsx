@@ -11,8 +11,8 @@ import { color, font } from "../theme";
 export const KF1Thread: React.FC = () => {
   const node = { x: 905, y: 505 };
   const anchors = [
-    { x: 790, y: 336, chip: "复制报错", cx: 842, cy: 404 },
-    { x: 1130, y: 372, chip: "按 y 确认", cx: 1024, cy: 420 },
+    { x: 790, y: 336, chip: "按 y 确认", cx: 842, cy: 404 },
+    { x: 1130, y: 372, chip: "开新会话", cx: 1024, cy: 420 },
     { x: 1060, y: 724, chip: "重新登录", cx: 1012, cy: 600 },
   ];
 
@@ -26,30 +26,30 @@ export const KF1Thread: React.FC = () => {
       <TerminalWindow
         logo="logos/deepseek-harness.svg"
         name="DeepSeek Harness"
-        status="上下文将满"
-        statusTone="warn"
+        status="等你确认"
+        statusTone="prompt"
         width={640}
         style={{ left: 150, top: 104 }}
         lines={[
-          { text: "› 重构 auth 会话模块", tone: "plain" },
-          { text: "✓ 读取 12 个文件", tone: "done" },
-          { text: "✓ 修改 src/auth/session.ts", tone: "done" },
-          { text: "⚠ 上下文已用 96%，正在压缩…", tone: "warn" },
+          { text: "› 跑一遍回归测试", tone: "plain" },
+          { text: "  running 418 tests …", tone: "dim" },
+          { text: "✗ 3 failed · auth.spec.ts", tone: "error" },
+          { text: "? 允许执行 npm install？(y/n) █", tone: "prompt" },
         ]}
       />
       <TerminalWindow
         logo="logos/codex.svg"
         logoFilter="invert(1)"
         name="Codex"
-        status="等你确认"
-        statusTone="prompt"
+        status="上下文将满"
+        statusTone="warn"
         width={640}
         style={{ left: 1130, top: 140 }}
         lines={[
-          { text: "› 跑一遍全部测试", tone: "plain" },
-          { text: "  running 418 tests …", tone: "dim" },
-          { text: "✗ 3 failed · auth.spec.ts", tone: "error" },
-          { text: "? 允许执行 npm install？(y/n) █", tone: "prompt" },
+          { text: "› 重构 auth 会话接口", tone: "plain" },
+          { text: "✓ 读取 12 个文件", tone: "done" },
+          { text: "✓ 修改 server/auth/session.ts", tone: "done" },
+          { text: "⚠ 上下文已用 96%，正在压缩…", tone: "warn" },
         ]}
       />
       <TerminalWindow
@@ -60,8 +60,8 @@ export const KF1Thread: React.FC = () => {
         width={640}
         style={{ left: 1060, top: 532 }}
         lines={[
-          { text: "› 查 OAuth 2.1 迁移资料", tone: "plain" },
-          { text: "✓ 已阅读 6 个网页", tone: "done" },
+          { text: "› 重做登录页面 UI", tone: "plain" },
+          { text: "✓ 生成 LoginPage.tsx · 3 个组件", tone: "done" },
           { text: "✗ 会话已断开，请重新登录", tone: "error" },
         ]}
       />

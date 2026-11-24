@@ -11,8 +11,8 @@ const printed = (frame: number, at: number) => interpolate(frame, [at, at + 6], 
 
 const NODE: Pt = { x: 905, y: 505 };
 const LINKS = [
-  { to: { x: 790, y: 336 }, bend: 0, chip: "复制报错", phase: 0 },
-  { to: { x: 1130, y: 372 }, bend: 0, chip: "按 y 确认", phase: 2.1 },
+  { to: { x: 790, y: 336 }, bend: 0, chip: "按 y 确认", phase: 0 },
+  { to: { x: 1130, y: 372 }, bend: 0, chip: "开新会话", phase: 2.1 },
   { to: { x: 1060, y: 724 }, bend: 60, chip: "重新登录", phase: 4.2 },
 ].map((link) => {
   const control = { x: (NODE.x + link.to.x) / 2 + link.bend, y: (NODE.y + link.to.y) / 2 - 40 };
@@ -57,20 +57,20 @@ const Sessions: React.FC<{ readonly frame: number }> = ({ frame }) => {
   const alert = (at: number) => interpolate(frame, [at, at + 3, at + 18], [0, 1, 0.25], clamp);
 
   const ds: TerminalLine[] = [
-    { text: "› 重构 auth 会话模块", reveal: printed(frame, dsIn + 6) },
-    { text: "✓ 读取 12 个文件", tone: "done", reveal: printed(frame, dsIn + 18) },
-    { text: "✓ 修改 src/auth/session.ts", tone: "done", reveal: printed(frame, dsIn + 32) },
-    { text: "⚠ 上下文已用 96%，正在压缩…", tone: "warn", reveal: printed(frame, dsStall) },
+    { text: "› 跑一遍回归测试", reveal: printed(frame, dsIn + 6) },
+    { text: "  running 418 tests …", tone: "dim", reveal: printed(frame, dsIn + 18) },
+    { text: "✗ 3 failed · auth.spec.ts", tone: "error", reveal: printed(frame, dsStall) },
+    { text: "? 允许执行 npm install？(y/n) █", tone: "prompt", reveal: printed(frame, dsStall + 4) },
   ];
   const cx: TerminalLine[] = [
-    { text: "› 跑一遍全部测试", reveal: printed(frame, cxIn + 6) },
-    { text: "  running 418 tests …", tone: "dim", reveal: printed(frame, cxIn + 18) },
-    { text: "✗ 3 failed · auth.spec.ts", tone: "error", reveal: printed(frame, cxStall) },
-    { text: "? 允许执行 npm install？(y/n) █", tone: "prompt", reveal: printed(frame, cxStall + 4) },
+    { text: "› 重构 auth 会话接口", reveal: printed(frame, cxIn + 6) },
+    { text: "✓ 读取 12 个文件", tone: "done", reveal: printed(frame, cxIn + 18) },
+    { text: "✓ 修改 server/auth/session.ts", tone: "done", reveal: printed(frame, cxIn + 30) },
+    { text: "⚠ 上下文已用 96%，正在压缩…", tone: "warn", reveal: printed(frame, cxStall) },
   ];
   const cl: TerminalLine[] = [
-    { text: "› 查 OAuth 2.1 迁移资料", reveal: printed(frame, clIn + 6) },
-    { text: "✓ 已阅读 6 个网页", tone: "done", reveal: printed(frame, clIn + 20) },
+    { text: "› 重做登录页面 UI", reveal: printed(frame, clIn + 6) },
+    { text: "✓ 生成 LoginPage.tsx · 3 个组件", tone: "done", reveal: printed(frame, clIn + 20) },
     { text: "✗ 会话已断开，请重新登录", tone: "error", reveal: printed(frame, clStall) },
   ];
 
@@ -79,8 +79,8 @@ const Sessions: React.FC<{ readonly frame: number }> = ({ frame }) => {
       <TerminalWindow
         logo="logos/deepseek-harness.svg"
         name="DeepSeek Harness"
-        status={frame >= dsStall ? "上下文将满" : "运行中"}
-        statusTone={frame >= dsStall ? "warn" : "run"}
+        status={frame >= dsStall ? "等你确认" : "运行中"}
+        statusTone={frame >= dsStall ? "prompt" : "run"}
         alert={alert(dsStall)}
         width={640}
         lines={ds}
@@ -95,8 +95,8 @@ const Sessions: React.FC<{ readonly frame: number }> = ({ frame }) => {
         logo="logos/codex.svg"
         logoFilter="invert(1)"
         name="Codex"
-        status={frame >= cxStall ? "等你确认" : "运行中"}
-        statusTone={frame >= cxStall ? "prompt" : "run"}
+        status={frame >= cxStall ? "上下文将满" : "运行中"}
+        statusTone={frame >= cxStall ? "warn" : "run"}
         alert={alert(cxStall)}
         width={640}
         lines={cx}
@@ -276,9 +276,9 @@ export const ColdOpen: React.FC = () => {
           opacity: interpolate(frame, [228, 240], [1, 0], clamp),
         }}
       >
-        <span style={{ opacity: interpolate(frame, [dsIn + 4, dsIn + 14], [0, 1], clamp) }}>一个改代码，</span>
-        <span style={{ opacity: interpolate(frame, [cxIn + 4, cxIn + 14], [0, 1], clamp) }}>一个跑测试，</span>
-        <span style={{ opacity: interpolate(frame, [clIn + 4, clIn + 14], [0, 1], clamp) }}>一个查资料。</span>
+        <span style={{ opacity: interpolate(frame, [dsIn + 4, dsIn + 14], [0, 1], clamp) }}>一个跑测试，</span>
+        <span style={{ opacity: interpolate(frame, [cxIn + 4, cxIn + 14], [0, 1], clamp) }}>一个写后端，</span>
+        <span style={{ opacity: interpolate(frame, [clIn + 4, clIn + 14], [0, 1], clamp) }}>一个做前端。</span>
       </Interactive.Div>
 
       <Interactive.Div

@@ -21,13 +21,24 @@ const copies = [
   [".github/readme/assets/varin-cast-light.webp", "cast/varin-cast-light.webp"],
   [".github/readme/assets/varin-zh-CN.png", "ui/readme-varin-zh.png"],
   [".github/readme/assets/workbench-zh-CN.png", "ui/readme-workbench-zh.png"],
-  ...["codex.svg", "deepseek-harness.svg", "pi.svg", "opencode.svg", "gemini.png", "kimi.png", "cursor.svg", "qoder.svg"].map(
+  [".github/readme/assets/ide-zh-CN.png", "ui/readme-ide-zh.png"],
+  [".github/readme/assets/conversation-choices-zh-CN.png", "ui/readme-choices-zh.png"],
+  ...["codex.svg", "deepseek-harness.svg", "pi.svg", "opencode.svg", "gemini.png", "kimi.png", "cursor.svg", "qoder.svg", "grok.svg"].map(
     (name) => [`packages/ui/src/assets/harness-logos/${name}`, `logos/${name}`],
   ),
   ...["claude.svg", "deepseek.svg", "openai.svg", "qwen.svg", "ollama.svg", "zhipuai-coding-plan.svg", "google.svg", "kimi-for-coding.svg", "openrouter.svg", "anthropic.svg"].map(
     (name) => [`packages/ui/src/assets/provider-logos/${name}`, `logos/provider-${name}`],
   ),
-  ["video-assets/retake-v0.9.53/02_agent_question_and_collaboration/s3_question_option_selected.png", "ui/question-selected.png", repo, true],
+  ...["claude", "deepseek", "gemini", "glm", "gpt", "grok", "jev", "kimi", "llama", "minimax", "mistral", "perplexity", "qwen", "seed", "wenxin"].map(
+    (name) => [`packages/ui/src/workbenches/bot/figurePresets/${name}.webp`, `bots/${name}.webp`],
+  ),
+  ["packages/web/public/companion-previews/varin.png", "bots/varin.png"],
+  ...[
+    ["02_agent_question_and_collaboration/s3_question_option_selected.png", "ui/question-selected.png"],
+    ["02_agent_question_and_collaboration/s1_question_card_idle.png", "ui/question-idle.png"],
+    ["03_completed_work/s0_collapsed.png", "ui/completed-collapsed.png"],
+    ["11d_settings_and_devices/settings_root.png", "ui/settings-devices.png"],
+  ].map(([from, to]) => [`video-assets/retake-v0.9.53/${from}`, to, repo, true]),
 ];
 
 const missing = [];

@@ -224,11 +224,20 @@ export function limit(bus, ceiling, lookaheadSec = 0.005, releaseSec = 0.08) {
     need[i] = peak > ceiling ? ceiling / peak : 1;
   }
   const rel = 1 - Math.exp(-1 / (releaseSec * SR));
+  // Sliding minimum of need[i .. i+la) with a monotonic deque of indices.
+  const deque = new Int32Array(bus.n);
+  let head = 0;
+  let tail = 0;
+  let next = 0;
   let g = 1;
   for (let i = 0; i < bus.n; i++) {
-    let target = 1;
     const end = Math.min(bus.n, i + la);
-    for (let k = i; k < end; k++) if (need[k] < target) target = need[k];
+    while (next < end) {
+      while (tail > head && need[deque[tail - 1]] >= need[next]) tail--;
+      deque[tail++] = next++;
+    }
+    while (deque[head] < i) head++;
+    const target = Math.min(1, need[deque[head]]);
     g = target < g ? target : g + (target - g) * rel;
     bus.L[i] *= g;
     bus.R[i] *= g;

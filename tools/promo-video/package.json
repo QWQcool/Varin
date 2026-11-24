@@ -28,10 +28,14 @@
   },
   "scripts": {
     "assets": "node scripts/sync-assets.mjs",
+    "chars": "node scripts/crop-chars.mjs",
     "audio": "node scripts/synth/sample15.mjs",
+    "audio:film": "node scripts/synth/film.mjs",
     "dev": "remotion studio",
     "keyframes": "remotion still src/index.ts KF1-Hook out/keyframes/KF1-Hook.png && remotion still src/index.ts KF2-Teammates out/keyframes/KF2-Teammates.png && remotion still src/index.ts KF3-Finale out/keyframes/KF3-Finale.png",
     "sample": "npm run audio && remotion render src/index.ts Sample15 out/sample-15s.mp4 && remotion render src/index.ts Sample15 out/sample-15s-sfx-only.mp4 --props=props/sfx-only.json",
+    "film": "npm run audio:film && remotion render src/index.ts VarinPromo out/varin-promo.mp4 && npm run film:sfx",
+    "film:sfx": "remotion ffmpeg -y -loglevel error -i out/varin-promo.mp4 -i public/audio/film-sfx.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 320k -shortest out/varin-promo-sfx-only.mp4",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
