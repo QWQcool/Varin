@@ -1,222 +1,219 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Img, interpolate, staticFile } from "remotion";
+import { Cursor } from "../../components/Cursor";
+import { Screen } from "../../components/Screen";
 import { color, font } from "../../theme";
+import { camEase } from "../camera";
 import { clamp, pop, rise } from "../motion";
+import { useSceneFrame } from "../scene";
 import { C } from "../timeline";
-import { Eyebrow, Headline, Mark } from "../Type";
+import { Hi, Title } from "../Title";
+import { PAPER } from "./Dispatch";
 
 const K = C.devices;
 
-const NODES = [
-  { x: 1000, y: 330, title: "你的电脑", sub: "发起任务", icon: "laptop" },
-  { x: 1440, y: 330, title: "Varin 服务", sub: "服务器上执行", icon: "server" },
-  { x: 1440, y: 700, title: "你的手机", sub: "随手批准", icon: "phone" },
-] as const;
+/** Same rectangle the views chapter ends on: x 80..960, centred on y 520. */
+const DESK = { x: 80, y: 520 - (1410 * 880) / 2220 / 2, k: 880 / 2220 };
 
-const Icon: React.FC<{ readonly kind: (typeof NODES)[number]["icon"] }> = ({ kind }) => (
-  <svg width={46} height={46} viewBox="0 0 24 24" fill="none" stroke={color.accent} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-    {kind === "laptop" ? (
-      <>
-        <rect x="4" y="5" width="16" height="11" rx="1.5" />
-        <path d="M2.5 19h19" />
-      </>
-    ) : kind === "server" ? (
-      <>
-        <rect x="4" y="4" width="16" height="7" rx="1.5" />
-        <rect x="4" y="13" width="16" height="7" rx="1.5" />
-        <path d="M8 7.5h.01M8 16.5h.01" />
-      </>
-    ) : (
-      <>
-        <rect x="7" y="2.5" width="10" height="19" rx="2" />
-        <path d="M11 18.5h2" />
-      </>
-    )}
-  </svg>
-);
+/** Real Android captures are 780 × 1688 (390 × 844 CSS at DPR 2). */
+const PHONE = { x: 1340, y: 128, k: 0.47, bezel: 14 };
+const PW = 780 * PHONE.k;
+const PH = 1688 * PHONE.k;
+const phonePt = (x: number, y: number) => ({ x: PHONE.x + PHONE.bezel + x * PHONE.k, y: PHONE.y + PHONE.bezel + y * PHONE.k });
+export const PHONE_CENTER = phonePt(390, 844);
 
-const NODE_W = 300;
-const NODE_H = 120;
-const center = (i: number) => ({ x: NODES[i].x + NODE_W / 2, y: NODES[i].y + NODE_H / 2 });
+const NODE = { x: 1150, y: 520 };
+
+/** Stage zoom about the phone while the thumb works, then a dive through its screen. */
+const stageScale = (f: number) => {
+  const tap = interpolate(f, [44, 64, 108, 126], [1, 1.42, 1.42, 1], { ...clamp, easing: camEase.follow });
+  const dive = f > K.dive ? Math.exp(((f - K.dive) / 26) * Math.log(9)) : 1;
+  return tap * dive;
+};
 
 export const DevicesScene: React.FC = () => {
-  const f = useCurrentFrame();
-  const approved = f >= K.approve;
-  const tap = interpolate(f, [K.approve - 6, K.approve, K.approve + 10], [0, 1, 0], clamp);
-  const pulse = (from: number) => interpolate(f, [from, from + 20], [0, 1], clamp);
+  const f = useSceneFrame();
+  const phoneIn = interpolate(f, [K.phone, K.phone + 16], [0, 1], { ...clamp, easing: camEase.snap });
+  const away = interpolate(f, [16, 26, K.synced - 6, K.synced], [0, 1, 1, 0], clamp);
+  const synced = interpolate(f, [K.synced - 4, K.synced + 4], [0, 1], clamp);
+  const s1 = f >= K.tapOption ? 1 : 0;
+  const s2 = interpolate(f, [K.back, K.back + 6], [0, 1], clamp);
+  const banner = interpolate(f, [K.ask, K.ask + 8, K.ask + 34, K.ask + 42], [0, 1, 1, 0], clamp);
+  const scale = stageScale(f);
+  const origin = f > K.dive ? PHONE_CENTER : { x: PHONE_CENTER.x, y: 600 };
+  const fingerP = f < K.tapOption + 6 ? phonePt(380, 805) : phonePt(652, 1136);
+  const fingerPrev = phonePt(560, 1500);
+  const fingerT = interpolate(f, [K.tapOption - 14, K.tapOption - 2, K.tapOption + 8, K.tapSubmit - 4], [0, 1, 1, 1], clamp);
+  const finger = f < K.tapOption + 6 ? { x: fingerPrev.x + (fingerP.x - fingerPrev.x) * fingerT, y: fingerPrev.y + (fingerP.y - fingerPrev.y) * fingerT } : (() => {
+    const a = phonePt(380, 805);
+    const t = interpolate(f, [K.tapOption + 6, K.tapSubmit - 2], [0, 1], { ...clamp, easing: camEase.follow });
+    return { x: a.x + (fingerP.x - a.x) * t, y: a.y + (fingerP.y - a.y) * t };
+  })();
+  const white = interpolate(f, [K.dive + 6, K.dive + 18], [0, 1], clamp);
 
-  const links: [number, number, number][] = [
-    [0, 1, K.nodes[1]],
-    [1, 2, K.nodes[2]],
-  ];
+  const dot = (from: { x: number; y: number }, to: { x: number; y: number }, at: number, len: number) => {
+    const t = interpolate(f, [at, at + len], [0, 1], { ...clamp, easing: camEase.follow });
+    return t > 0 && t < 1 ? { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t } : null;
+  };
+  const deskEdge = { x: 960, y: 520 };
+  const phoneEdge = { x: PHONE.x, y: 520 };
+  const out = [dot(deskEdge, NODE, 12, 10), dot(NODE, phoneEdge, 22, 10)];
+  const back = [dot(phoneEdge, NODE, K.back + 2, 12), dot(NODE, deskEdge, K.back + 14, 12)];
 
   return (
-    <AbsoluteFill style={{ background: "radial-gradient(ellipse 1300px 900px at 1200px 520px, #f5f5f0 0%, #efefe8 60%, #e7e7df 100%)", fontFamily: font.sans }}>
-      <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
-        {links.map(([a, b, at], i) => {
-          const p = center(a);
-          const q = center(b);
-          const draw = rise(f, at, 18);
-          const send = i === 1 ? pulse(K.phone - 20) : pulse(K.nodes[1] + 20);
-          const back = pulse(K.approve);
-          return (
-            <g key={i}>
-              <line x1={p.x} y1={p.y} x2={p.x + (q.x - p.x) * draw} y2={p.y + (q.y - p.y) * draw} stroke="rgba(75,111,172,0.35)" strokeWidth={3} strokeDasharray="4 10" strokeLinecap="round" />
-              {send > 0 && send < 1 ? <circle cx={p.x + (q.x - p.x) * send} cy={p.y + (q.y - p.y) * send} r={9} fill={color.accent} /> : null}
-              {i === 1 && back > 0 && back < 1 ? <circle cx={q.x + (p.x - q.x) * back} cy={q.y + (p.y - q.y) * back} r={9} fill={color.success} /> : null}
-            </g>
-          );
-        })}
-      </svg>
+    <AbsoluteFill style={{ background: PAPER, overflow: "hidden" }}>
+      <AbsoluteFill style={{ transformOrigin: `${origin.x}px ${origin.y}px`, scale }}>
+        <svg width={1920} height={1080} style={{ position: "absolute", inset: 0 }}>
+          {[
+            [deskEdge, NODE],
+            [NODE, phoneEdge],
+          ].map(([a, b], i) => (
+            <line key={i} x1={a.x} y1={a.y} x2={a.x + (b.x - a.x) * rise(f, 4 + i * 8, 10)} y2={b.y} stroke="rgba(75,111,172,0.45)" strokeWidth={3} strokeDasharray="4 10" strokeLinecap="round" />
+          ))}
+          {[...out, ...back].map((p, i) => (p ? <circle key={i} cx={p.x} cy={p.y} r={10} fill={i < 2 ? color.accent : color.success} /> : null))}
+        </svg>
 
-      {NODES.map((n, i) => {
-        const on = interpolate(f, [K.nodes[i], K.nodes[i] + 14], [0, 1], pop);
-        const lit = i === 2 && approved ? interpolate(f, [K.approve, K.approve + 4, K.approve + 24], [0, 1, 0.3], clamp) : 0;
-        return (
+        <Screen
+          at={DESK}
+          radius={14}
+          layers={[
+            { src: "ui/readme-ide-zh.png", opacity: 1 - synced },
+            { src: "ui/desktop-synced.png", opacity: synced },
+          ]}
+        >
+          <div style={{ position: "absolute", inset: 0, background: "rgba(18,22,24,0.62)", opacity: away }} />
           <div
-            key={n.title}
             style={{
               position: "absolute",
-              left: n.x,
-              top: n.y,
-              width: NODE_W,
-              height: NODE_H,
-              display: "flex",
-              alignItems: "center",
-              gap: 18,
-              padding: "0 24px",
-              boxSizing: "border-box",
-              borderRadius: 20,
-              background: color.surface,
-              border: `1px solid ${i === 1 ? color.accent : color.line}`,
-              boxShadow: `0 18px 40px rgba(32,39,42,0.10), 0 0 0 ${3 * lit}px ${color.success}`,
-              opacity: on * (i === 2 ? 1 - rise(f, K.phone, 10) : 1),
-              scale: 0.8 + 0.2 * on,
+              left: 600,
+              top: 398,
+              width: 1582,
+              height: 92,
+              borderRadius: 18,
+              border: `8px solid ${color.success}`,
+              opacity: interpolate(f, [K.synced + 4, K.synced + 10, 206, 212], [0, 1, 1, 0], clamp),
+              scale: interpolate(f, [K.synced + 4, K.synced + 16], [1.08, 1], { ...clamp, easing: camEase.snap }),
             }}
-          >
-            <Icon kind={n.icon} />
-            <div>
-              <div style={{ fontSize: 30, fontWeight: 650, color: color.ink }}>{n.title}</div>
-              <div style={{ fontSize: 22, color: color.muted }}>{n.sub}</div>
+          />
+        </Screen>
+        <div style={{ position: "absolute", left: 80, top: 520, width: 880, textAlign: "center", translate: "0 -50%", fontFamily: font.sans, fontSize: 40, fontWeight: 650, color: "#eeeee8", opacity: away * interpolate(f, [22, 30], [0, 1], clamp) }}>
+          你离开了电脑
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            left: NODE.x - 118,
+            top: NODE.y - 40,
+            width: 236,
+            height: 80,
+            borderRadius: 20,
+            background: color.surface,
+            border: `2px solid ${color.accent}`,
+            boxShadow: "0 16px 36px rgba(32,39,42,0.14)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            fontFamily: font.sans,
+            fontSize: 28,
+            fontWeight: 700,
+            color: color.ink,
+            scale: interpolate(f, [2, 12], [0, 1], pop),
+          }}
+        >
+          <svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke={color.accent} strokeWidth={1.8} strokeLinecap="round">
+            <rect x="4" y="4" width="16" height="7" rx="1.5" />
+            <rect x="4" y="13" width="16" height="7" rx="1.5" />
+            <path d="M8 7.5h.01M8 16.5h.01" />
+          </svg>
+          Varin 服务
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            left: PHONE.x,
+            top: PHONE.y,
+            width: PW + PHONE.bezel * 2,
+            height: PH + PHONE.bezel * 2,
+            borderRadius: 58,
+            background: "#1d2326",
+            boxShadow: "0 40px 90px rgba(32,39,42,0.3), inset 0 0 0 2px #3a4246",
+            translate: `0px ${(1 - phoneIn) * 900}px`,
+            rotate: `${(1 - phoneIn) * 8}deg`,
+          }}
+        >
+          <div style={{ position: "absolute", left: PHONE.bezel, top: PHONE.bezel, width: PW, height: PH, borderRadius: 44, overflow: "hidden", background: "#f3f3f3" }}>
+            {[
+              { src: "ui/phone-ask.png", o: 1 },
+              { src: "ui/phone-picked.png", o: s1 },
+              { src: "ui/phone-done.png", o: s2 },
+            ].map((l) => (l.o > 0 ? <Img key={l.src} src={staticFile(l.src)} style={{ position: "absolute", inset: 0, width: PW, height: PH, opacity: l.o }} /> : null))}
+            <div
+              style={{
+                position: "absolute",
+                left: 12,
+                right: 12,
+                top: 14,
+                padding: "14px 18px",
+                borderRadius: 22,
+                background: "rgba(255,255,255,0.96)",
+                boxShadow: "0 10px 26px rgba(0,0,0,0.16)",
+                fontFamily: font.sans,
+                opacity: banner,
+                translate: `0px ${(1 - banner) * -60}px`,
+              }}
+            >
+              <div style={{ fontSize: 17, color: color.muted, fontWeight: 600 }}>Varin · 现在</div>
+              <div style={{ fontSize: 21, color: color.ink, fontWeight: 700, marginTop: 2 }}>需要你确认一下</div>
             </div>
           </div>
-        );
-      })}
-
-      <div
-        style={{
-          position: "absolute",
-          left: 1400,
-          top: 560,
-          width: 380,
-          height: 410,
-          borderRadius: 34,
-          background: "#1f2629",
-          padding: 12,
-          boxSizing: "border-box",
-          boxShadow: "0 30px 70px rgba(32,39,42,0.25)",
-          opacity: rise(f, K.phone, 10),
-          scale: 0.3 + 0.7 * rise(f, K.phone, 18),
-          transformOrigin: "190px 200px",
-        }}
-      >
-        <div style={{ width: "100%", height: "100%", borderRadius: 24, background: "#f3f3f3", padding: 22, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 24, color: color.muted }}>
-            <span style={{ width: 10, height: 10, borderRadius: 5, background: "#8d6c15" }} />
-            Claude Code 等你确认
-          </div>
-          <div style={{ fontSize: 29, fontWeight: 650, color: color.ink, lineHeight: 1.35 }}>登录页改好了，要不要合并到主分支？</div>
-          <div style={{ flex: 1 }} />
-          <div
-            style={{
-              height: 62,
-              borderRadius: 14,
-              background: approved ? color.success : color.accent,
-              color: "#fafafa",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 28,
-              fontWeight: 650,
-              scale: 1 - 0.05 * tap,
-            }}
-          >
-            {approved ? "已批准 ✓" : "批准"}
-          </div>
-          <div style={{ height: 52, borderRadius: 14, border: `1px solid ${color.line}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: color.muted }}>
-            再看看
-          </div>
         </div>
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          left: 1562,
-          top: 811,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          background: "rgba(32,39,42,0.18)",
-          border: "2px solid rgba(255,255,255,0.7)",
-          opacity: interpolate(f, [K.approve - 14, K.approve - 6, K.approve + 8, K.approve + 16], [0, 1, 1, 0], clamp),
-          scale: 1 - 0.25 * tap,
-        }}
-      />
 
-      <div
-        style={{
-          position: "absolute",
-          left: 1000,
-          top: 200,
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "10px 18px",
-          borderRadius: 12,
-          background: "#ffffff",
-          border: `1px solid ${color.line}`,
-          boxShadow: "0 12px 28px rgba(32,39,42,0.10)",
-          fontSize: 23,
-          fontWeight: 550,
-          color: color.ink,
-          opacity: rise(f, K.desktop, 12),
-        }}
-      >
-        <span style={{ color: color.success }}>●</span> 同一个会话已在电脑上继续
-      </div>
+        <Cursor kind="touch" x={finger.x} y={finger.y} frame={f} clicks={[K.tapOption, K.tapSubmit]} opacity={interpolate(f, [K.tapOption - 16, K.tapOption - 8, K.tapSubmit + 8, K.tapSubmit + 14], [0, 1, 1, 0], clamp)} />
+      </AbsoluteFill>
 
-      <Eyebrow index="06" title="跨设备" reveal={rise(f, 4)} style={{ left: 120, top: 196 }} />
-      <Headline
-        lines={[
-          "一个对话，",
-          <>
-            跨你连上的<Mark draw={rise(f, 50, 14)}>每台设备</Mark>。
-          </>,
-        ]}
-        reveal={[rise(f, 14), rise(f, 28)]}
-        size={78}
-        style={{ left: 116, top: 246 }}
-      />
       <div
         style={{
           position: "absolute",
           left: 120,
-          top: 470,
-          display: "flex",
-          flexDirection: "column",
-          gap: 14,
+          top: 120,
+          padding: "14px 26px",
+          borderRadius: 999,
+          background: color.ink,
+          color: color.paper,
+          fontFamily: font.sans,
           fontSize: 34,
-          fontWeight: 500,
-          color: color.muted,
+          fontWeight: 650,
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          boxShadow: "0 18px 40px rgba(0,0,0,0.22)",
+          opacity: interpolate(f, [K.synced + 8, K.synced + 14, K.dive - 4, K.dive + 4], [0, 1, 1, 0], clamp),
+          scale: interpolate(f, [K.synced + 8, K.synced + 18], [0.7, 1], { ...clamp, easing: camEase.snap }),
         }}
       >
-        {["电脑发起", "服务器执行", "手机批准"].map((t, i) => (
-          <div key={t} style={{ opacity: rise(f, K.nodes[i] + 6), translate: `${(1 - rise(f, K.nodes[i] + 6)) * -14}px 0px` }}>
-            <span style={{ color: color.accent, fontFamily: "Inter", fontWeight: 700, marginRight: 14 }}>{i + 1}</span>
-            {t}
-          </div>
-        ))}
+        <span style={{ width: 14, height: 14, borderRadius: 7, background: color.successOnDark }} />
+        手机上点的，电脑上已经接着做了
       </div>
+
+      <Title
+        f={f}
+        at={6}
+        out={K.synced - 8}
+        gone={K.dive}
+        index="06"
+        title="跨设备"
+        lines={[
+          "一个对话，",
+          <>
+            跨你连上的<Hi>每台设备</Hi>。
+          </>,
+        ]}
+        sub="电脑发起 · 服务器执行 · 手机批准"
+      />
+      <AbsoluteFill style={{ background: "#f4f4ef", opacity: white }} />
     </AbsoluteFill>
   );
 };

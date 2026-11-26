@@ -1,6 +1,7 @@
 import "./theme";
 import { Composition, Folder, Still } from "remotion";
 import { Film } from "./film/Film";
+import { FILM_FRAMES } from "./film/timeline";
 import { KF1Thread } from "./keyframes/KF1Thread";
 import { KF2Teammates } from "./keyframes/KF2Teammates";
 import { KF3Finale } from "./keyframes/KF3Finale";
@@ -12,7 +13,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="VarinPromo"
         component={Film}
-        durationInFrames={3465}
+        durationInFrames={FILM_FRAMES}
         fps={30}
         width={1920}
         height={1080}

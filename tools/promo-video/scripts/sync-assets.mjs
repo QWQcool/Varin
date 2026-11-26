@@ -23,9 +23,27 @@ const copies = [
   [".github/readme/assets/workbench-zh-CN.png", "ui/readme-workbench-zh.png"],
   [".github/readme/assets/ide-zh-CN.png", "ui/readme-ide-zh.png"],
   [".github/readme/assets/conversation-choices-zh-CN.png", "ui/readme-choices-zh.png"],
-  ...["codex.svg", "deepseek-harness.svg", "pi.svg", "opencode.svg", "gemini.png", "kimi.png", "cursor.svg", "qoder.svg", "grok.svg"].map(
-    (name) => [`packages/ui/src/assets/harness-logos/${name}`, `logos/${name}`],
-  ),
+  ...[
+    "codex.svg",
+    "deepseek-harness.svg",
+    "pi.svg",
+    "opencode.svg",
+    "gemini.png",
+    "kimi.png",
+    "cursor.svg",
+    "qoder.svg",
+    "grok.svg",
+    "cline.svg",
+    "codebuddy.svg",
+    "openclaw.svg",
+    "hermes-agent.svg",
+    "google-antigravity.svg",
+    "kiro.svg",
+    "zcode.svg",
+    "trae.svg",
+    "command-code.svg",
+    "minimax-code.svg",
+  ].map((name) => [`packages/ui/src/assets/harness-logos/${name}`, `logos/${name}`]),
   ...["claude.svg", "deepseek.svg", "openai.svg", "qwen.svg", "ollama.svg", "zhipuai-coding-plan.svg", "google.svg", "kimi-for-coding.svg", "openrouter.svg", "anthropic.svg"].map(
     (name) => [`packages/ui/src/assets/provider-logos/${name}`, `logos/provider-${name}`],
   ),
@@ -34,11 +52,22 @@ const copies = [
   ),
   ["packages/web/public/companion-previews/varin.png", "bots/varin.png"],
   ...[
+    ["01_home_composer_and_mentions/s0_empty.png", "ui/home-empty.png"],
     ["02_agent_question_and_collaboration/s3_question_option_selected.png", "ui/question-selected.png"],
     ["02_agent_question_and_collaboration/s1_question_card_idle.png", "ui/question-idle.png"],
     ["03_completed_work/s0_collapsed.png", "ui/completed-collapsed.png"],
     ["11d_settings_and_devices/settings_root.png", "ui/settings-devices.png"],
   ].map(([from, to]) => [`video-assets/retake-v0.9.53/${from}`, to, repo, true]),
+  /** 0.9.49 native pack: switcher menus, usage, and the Android approval round trip with its desktop result. */
+  ...[
+    ["04_workbench_switcher_and_transitions/var_s1_open.png", "ui/menu-from-varin.png"],
+    ["04_workbench_switcher_and_transitions/wb_s2_hover_ide.png", "ui/menu-from-workbench.png"],
+    ["11_five_power_features_montage/11d_token_usage_and_protocols/s0.png", "ui/usage.png"],
+    ["03_multi_run_worktrees_and_mobile/m1a_mobile_question_waiting.png", "ui/phone-ask.png"],
+    ["03_multi_run_worktrees_and_mobile/m1_mobile_thread_approve.png", "ui/phone-picked.png"],
+    ["03_multi_run_worktrees_and_mobile/m2_mobile_approval_confirmed.png", "ui/phone-done.png"],
+    ["02_agent_question_and_collaboration/s4_desktop_answer_synced_from_android.png", "ui/desktop-synced.png"],
+  ].map(([from, to]) => [`video-assets/varin-native-ui-pack/${from}`, to, repo, true]),
 ];
 
 const missing = [];

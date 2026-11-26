@@ -18,7 +18,7 @@ const TRAIL = "M35 19 L11 43 L-44 43 L-57 30 L-2 30 L21 7 L21 -26 L35 -12 Z";
  */
 const K = 1.34;
 const LOCK_Y = 430;
-const LOCK = {
+export const LOCK = {
   markX: 960 + (380 - 518) * K,
   markY: LOCK_Y,
   markSize: 128 * 1.28 * K,
@@ -32,12 +32,14 @@ const LOCK = {
  * Starts at `T.bracketFly`. The two halves of the Varin mark close in from opposite corners,
  * land on the impact, and the paper world opens from the point of contact.
  */
-export const Reveal: React.FC = () => {
+export const Reveal: React.FC<{ readonly outro?: number }> = ({ outro }) => {
   const g = useCurrentFrame();
   const hit = T.impact - T.bracketFly;
   const word = T.wordmark - T.bracketFly;
   const tag = T.tagline - T.bracketFly;
   const sub = T.subline - T.bracketFly;
+  /** In the film the promise lines leave first, so only the mark and the wordmark are left to carry. */
+  const keep = outro === undefined ? 1 : interpolate(g, [outro - T.bracketFly, outro - T.bracketFly + 8], [1, 0], clamp);
 
   const recoil = interpolate(g, [hit, hit + 2, hit + 10], [1, 1.08, 1], clamp);
   const flight = interpolate(g, [0, hit], [2.6, 1], { ...clamp, easing: slam });
@@ -101,7 +103,8 @@ export const Reveal: React.FC = () => {
           position: "absolute",
           inset: 0,
           clipPath: `inset(0 ${interpolate(g, [word, word + 14], [100 - (LOCK.textX / 1920) * 100, 0], settle)}% 0 0)`,
-          translate: `${interpolate(g, [word, word + 16], [28, 0], settle)}px 0px`,
+          translate: `${interpolate(g, [word, word + 16], [28, 0], settle) + (1 - keep) * 24}px 0px`,
+          opacity: keep,
         }}
       >
         <text
@@ -129,8 +132,8 @@ export const Reveal: React.FC = () => {
           fontWeight: 700,
           letterSpacing: 2,
           color: "#20272a",
-          opacity: interpolate(g, [tag, tag + 10], [0, 1], clamp),
-          translate: `0px ${interpolate(g, [tag, tag + 14], [26, 0], settle)}px`,
+          opacity: interpolate(g, [tag, tag + 10], [0, 1], clamp) * keep,
+          translate: `0px ${interpolate(g, [tag, tag + 14], [26, 0], settle) - (1 - keep) * 30}px`,
         }}
       >
         通用 <span style={{ color: "#4b6fac" }}>Super Agent</span>
@@ -148,8 +151,8 @@ export const Reveal: React.FC = () => {
           fontWeight: 450,
           letterSpacing: 1,
           color: "#686868",
-          opacity: interpolate(g, [sub, sub + 10], [0, 1], clamp),
-          translate: `0px ${interpolate(g, [sub, sub + 14], [18, 0], settle)}px`,
+          opacity: interpolate(g, [sub, sub + 10], [0, 1], clamp) * keep,
+          translate: `0px ${interpolate(g, [sub, sub + 14], [18, 0], settle) - (1 - keep) * 30}px`,
         }}
       >
         一个对话，调度模型、Agent 和你连上的每台设备。

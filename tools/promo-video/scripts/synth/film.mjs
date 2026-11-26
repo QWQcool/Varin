@@ -4,11 +4,11 @@
  * Every event is read from src/film/timeline.ts and src/sample/timeline.ts, the same frames the picture uses.
  *
  * Writes public/audio/film.wav (music + SFX) and public/audio/film-sfx.wav (SFX only).
- * 120 BPM, A minor. Sections:
- *   0-12    intro (identical to the approved sample)        12-60  theme A
- *   60-67.5 narrowed groove      67.5-69.5 power cut       69.5-72 rebuild
- *   72-96   theme B (clap, lead) 96-104 warm (bells)        104-108 build
- *   108     final hit, Am(add9) decaying to the end
+ * 120 BPM, A minor. Sections (V2 timeline):
+ *   0-12   intro (identical to the approved sample)          12-43.4 theme A, clap from 16 s, lead from 28 s
+ *   43.4   the floor drops      44-49 narrowed groove        49-50.5 power cut      51-54 rebuild
+ *   54-70  theme B (clap, lead) 70-78 bots: groove + bells     78-82 build
+ *   82     final hit, Am(add9) decaying to the end
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -518,107 +518,196 @@ stab(HIT1, [57, 60, 64, 69], 0.06);
 whoosh(s(T.wordmark) - 0.12, 0.5, 0.3);
 sparkle(s(T.tagline), 0.07);
 
-// ---------------------------------------------------------------- 12-60 theme A
+// ---------------------------------------------------------------- 12-44 theme A, then everything rides it
 
-const AG = S.agents.from;
-groove(HIT1, s(S.steer.from), { arpFrom: HIT1 + 0.5, kickFrom: HIT1 + 0.5 });
-groove(s(S.steer.from), s(S.models.from), { arpGain: 0.6 });
-groove(s(S.models.from), s(REC), { padCut: 2200 });
+/** A title card or a headline word landing: soft low thump with a wooden top. */
+function slamHit(t0, gain = 1) {
+  kick(sfx, t0, 0.22 * gain);
+  tap(t0, 0.16 * gain, 0.75, 0);
+}
 
-whoosh(s(AG) - 0.7, 0.8, 0.22, 0.2, -0.4);
-C.agents.card.forEach((f, i) => land(s(AG + f + 8), 0.3, [-0.4, -0.2, 0][i]));
-C.agents.char.forEach((f, i) => tap(s(AG + f + 4), 0.22 - i * 0.03, 1.5, -0.5));
-const [doneAt, runAt, waitAt] = C.agents.status;
-chime(s(AG + doneAt), 88, 0.07, -0.3);
-chime(s(AG + doneAt) + 0.09, 93, 0.06, -0.3);
-tap(s(AG + runAt), 0.2, 1.2, -0.3);
-chime(s(AG + waitAt), 84, 0.07, -0.3);
-sparkle(s(AG + C.agents.result), 0.04);
+/** The product's lattice: a short shimmer of tiny cells. */
+function shimmer(t0, len, gain, up = true) {
+  for (let i = 0; i < 12; i++) {
+    const p = i / 11;
+    tap(t0 + p * len, gain * (0.6 + 0.4 * Math.sin(p * Math.PI)), up ? 1.6 + p * 0.9 : 2.5 - p * 0.9, -0.7 + ((i * 7) % 11) / 7.5);
+  }
+}
 
+/** Falling sweep (the paper floor drops away). */
+function fall(t0, len, gain) {
+  const r = rng(nextSeed());
+  const bp = new Biquad();
+  voice(sfx, t0, len, (t, o, i) => {
+    const p = t / len;
+    if (i % 32 === 0) bp.set("bp", 3200 * (260 / 3200) ** p, 1.4);
+    const env = Math.sin(Math.PI * Math.min(1, p * 1.05)) ** 1.5;
+    const v = bp.run(r() * 2 - 1) * env * gain;
+    o[0] = v;
+    o[1] = v;
+  }, sfxSend, 0.3);
+}
+
+const DP = S.dispatch.from;
 const ST = S.steer.from;
-const TYPED_LEN = "顺便把移动端也适配一下".length;
-for (let i = 0; i < TYPED_LEN; i++) keystroke(s(ST + C.steer.type + 3 * (i + 1)), 0.3, false);
-whoosh(s(ST + C.steer.queued) - 0.05, 0.3, 0.16, 0.2, 0.6);
-tap(s(ST + C.steer.question), 0.24, 1.1, 0.3);
-click(s(ST + C.steer.pick), 0.42);
-whoosh(s(ST + C.steer.folded) - 0.05, 0.35, 0.18, 0.5, -0.2);
-
 const MO = S.models.from;
-C.models.deal.forEach((f, i) => {
-  flick(s(MO + f), 0.34 - i * 0.025, i % 2 ? 0.35 : -0.35);
-  tap(s(MO + f + 12), 0.3 - i * 0.022, 1 + (i % 2) * 0.12, i % 2 ? 0.35 : -0.35);
-});
-stall(s(MO + C.models.rest), 0.25);
-for (let i = 0; i < 4; i++) click(s(MO + C.models.roles + i * 15), 0.28 - i * 0.03);
+const DROP = s(MO + C.models.drop);
 
-// ---------------------------------------------------------------- 60-72 power cut and recovery
+groove(HIT1, s(DP), { arpFrom: HIT1 + 0.5, kickFrom: HIT1 + 0.5 });
+groove(s(DP), s(ST), { clapOn: true, padCut: 2200 });
+groove(s(ST), s(MO), { clapOn: true, leadOn: true, padCut: 2300 });
+groove(s(MO), DROP, { clapOn: true, leadOn: true, padCut: 2500 });
+
+// 01 dispatch
+const D = C.dispatch;
+whoosh(s(DP) - 0.85, 0.8, 0.26, 0.4, -0.3);
+click(s(DP + D.click), 0.32);
+const PROMPT_LEN = "一起准备周五的发布吧。帮我把用户反馈、版本说明和官网的工作统筹起来。".length;
+for (let i = 0; i < PROMPT_LEN; i += 2) keystroke(s(DP + D.typeFrom + i * D.typeStep), 0.28, false);
+click(s(DP + D.send), 0.4);
+whoosh(s(DP + D.send), 0.35, 0.2, -0.2, 0.3);
+slamHit(s(DP + D.title + 5));
+slamHit(s(DP + D.title + 13), 0.8);
+tap(s(DP + 150), 0.2, 1.2, 0);
+D.card.forEach((f, i) => {
+  land(s(DP + f + 6), 0.3, 0.2 + i * 0.15);
+  tap(s(DP + f + 12), 0.18, 1.5 + i * 0.1, 0.4);
+});
+chime(s(DP + D.status[0]), 88, 0.07, 0.3);
+chime(s(DP + D.status[0]) + 0.09, 93, 0.06, 0.3);
+tap(s(DP + D.status[1]), 0.2, 1.2, 0.3);
+chime(s(DP + D.status[2]), 84, 0.07, 0.3);
+whoosh(s(DP + D.pull) - 0.1, 0.9, 0.24, 0.5, -0.5);
+for (let i = 0; i < 20; i++) tap(s(DP + D.wall + i * D.wallStep + 3), 0.17 - i * 0.003, 1.0 + i * 0.045, -0.75 + ((i * 7) % 15) / 10);
+slamHit(s(DP + D.wallText[0]), 1.2);
+slamHit(s(DP + D.wallText[1]), 0.9);
+whoosh(s(DP + D.whip) - 0.05, 0.5, 0.32, 0.8, -0.8);
+
+// 02 steer
+const E = C.steer;
+click(s(ST + E.click), 0.3);
+for (let i = 0; i < "顺便把移动端也适配一下".length; i++) keystroke(s(ST + E.typeFrom + E.typeStep * (i + 1)), 0.28, false);
+keystroke(s(ST + E.enter), 0.36, true);
+whoosh(s(ST + E.enter), 0.3, 0.16, 0.2, -0.4);
+slamHit(s(ST + 49));
+slamHit(s(ST + 57), 0.8);
+tap(s(ST + 76), 0.22, 1.1, -0.4);
+click(s(ST + E.pick), 0.42);
+click(s(ST + E.submit), 0.42);
+whoosh(s(ST + E.folded), 0.35, 0.18, 0.5, -0.2);
+tap(s(ST + E.folded + 12), 0.2, 1.3, -0.4);
+click(s(ST + E.selector), 0.4);
+riser(s(ST + 196), s(ST + E.iris + 8), 0.22);
+whoosh(s(ST + E.iris), 0.4, 0.24, 0, 0);
+
+// 03 models
+const M = C.models;
+M.deal.forEach((f, i) => {
+  flick(s(MO + f), 0.34 - i * 0.02, i % 2 ? 0.4 : -0.4);
+  tap(s(MO + f + 10), 0.28 - i * 0.02, 1 + (i % 2) * 0.12, i % 2 ? 0.4 : -0.4);
+});
+slamHit(s(MO + 29));
+slamHit(s(MO + 37), 0.8);
+M.roles.forEach((f, i) => click(s(MO + f), 0.3 - i * 0.03));
+whoosh(s(MO + M.usage), 0.5, 0.24, 0.7, -0.1);
+tap(s(MO + M.usage + 30), 0.22, 1.2, 0.2);
+slamHit(s(MO + M.usage + 21), 0.8);
+fall(DROP, 0.75, 0.5);
+kick(sfx, DROP + 0.75, 0.4);
+
+// ---------------------------------------------------------------- 44-54 power cut and recovery
 
 const RC = REC;
+const R = C.recover;
 pad(music, musicSend, 0.4, s(RC) - 0.05, s(RC) + 2, CH.Dm.pad, 0.03, 0.3, 0.6, () => 700);
-pad(music, musicSend, 0.4, s(RC) + 2, s(RC) + 4, CH.Am.pad, 0.03, 0.2, 0.6, () => 700);
-pad(music, musicSend, 0.4, s(RC) + 4, s(RC) + 6, CH.Dm.pad, 0.03, 0.2, 0.6, () => 760);
-pad(music, musicSend, 0.4, s(RC) + 6, BLACKOUT, CH.E.pad, 0.032, 0.2, 0.02, () => 820);
-drone(s(RC), BLACKOUT, 26, 0.06, 0.8);
-for (let t = s(RC); t < BLACKOUT - 1e-6; t += 0.25) hat(t, Math.round((t - s(RC)) / 0.25) % 2 ? 0.05 : 0.03);
-for (let t = s(RC); t < BLACKOUT - 1e-6; t += 1) {
+pad(music, musicSend, 0.4, s(RC) + 2, s(RC) + 4, CH.Am.pad, 0.03, 0.2, 0.6, () => 760);
+pad(music, musicSend, 0.4, s(RC) + 4, BLACKOUT, CH.E.pad, 0.032, 0.2, 0.02, () => 820);
+drone(s(RC), BLACKOUT, 26, 0.06, 0.6);
+for (let t = s(RC); t < BLACKOUT - 1e-6; t += 0.25) hat(t, Math.round((t - s(RC)) / 0.25) % 2 ? 0.06 : 0.035);
+for (let t = s(RC); t < BLACKOUT - 1e-6; t += 0.5) {
   heartbeat(t, 0.5);
-  heartbeat(t + 0.22, 0.32);
+  heartbeat(t + 0.2, 0.3);
 }
-for (let i = 0; i < 4; i++) tap(s(RC + i * 45), 0.2, 1.3, 0.4);
-for (let i = 0; i < 3; i++) chime(s(RC + i * 45 + 30), 86, 0.04, 0.4);
+slamHit(s(RC + 5));
+slamHit(s(RC + 13), 0.8);
+for (let i = 0; i < 4; i++) tap(s(RC + R.grow + i * 32), 0.2, 1.3, 0.4);
+for (let i = 0; i < 3; i++) chime(s(RC + R.grow + i * 32 + 22), 86, 0.045, 0.4);
 
 powerDown(BLACKOUT);
 hum(BLACKOUT + 0.25, RELIGHT - 0.05, 0.016);
-powerUp(RELIGHT - 0.1, 0.6);
-const RESUME = s(RC + C.recover.resume);
+powerUp(RELIGHT - 0.1, 0.5);
+const RESUME = s(RC + R.resume);
 chime(RESUME, 88, 0.06, 0.3);
-for (let i = 1; i < 5; i++) tap(RESUME + i * 0.5, 0.2, 1.3 + i * 0.05, 0.4);
+for (let i = 1; i < 5; i++) tap(RESUME + i * 0.5, 0.2, 1.3 + i * 0.06, 0.4);
+slamHit(s(RC + R.relight + 11));
+slamHit(s(RC + R.relight + 19), 0.8);
 pad(music, musicSend, 0.35, RESUME, HIT2, CH.E.pad, 0.03, 0.3, 0.02, (t) => 600 * (3600 / 600) ** ((t - RESUME) / (HIT2 - RESUME)));
-for (let t = RESUME; t < HIT2 - 1e-6; t += 0.5) kick(music, t, 0.35 + 0.2 * ((t - RESUME) / (HIT2 - RESUME)));
-for (let t = RESUME + 1; t < HIT2 - 1e-6; t += 0.125) snare(t, 0.06 + 0.12 * ((t - RESUME - 1) / (HIT2 - RESUME - 1)));
-riser(RELIGHT + 0.2, HIT2, 0.32);
+for (let t = RESUME; t < HIT2 - 1e-6; t += 0.5) kick(music, t, 0.38 + 0.2 * ((t - RESUME) / (HIT2 - RESUME)));
+for (let t = RESUME + 0.5; t < HIT2 - 1e-6; t += 0.125) snare(t, 0.06 + 0.13 * ((t - RESUME - 0.5) / (HIT2 - RESUME - 0.5)));
+riser(RELIGHT + 0.2, HIT2, 0.34);
 
 impact(HIT2, 0.85);
 kick(sfx, HIT2, 0.7);
 stab(HIT2, [57, 60, 64, 69], 0.055);
 
-// ---------------------------------------------------------------- 72-96 theme B
+// ---------------------------------------------------------------- 54-70 theme B
 
-groove(HIT2, s(S.bots.from), { clapOn: true, leadOn: true, padCut: 2500, kickFrom: HIT2 + 0.5 });
+groove(HIT2, s(S.bots.from), { clapOn: true, leadOn: true, padCut: 2600, kickFrom: HIT2 + 0.5 });
+
 const VW = S.views.from;
-for (const f of C.views.view.slice(1)) {
-  whoosh(s(VW + f) - 0.2, 0.5, 0.22, -0.6, 0.6);
-  click(s(VW + f) + 0.25, 0.18);
+const V = C.views;
+whoosh(s(VW) - 0.45, 0.5, 0.2, 0, 0);
+slamHit(s(VW + 9), 0.8);
+for (let i = 0; i < 2; i++) {
+  click(s(VW + V.menu[i]), 0.3);
+  click(s(VW + V.pick[i]), 0.36);
+  shimmer(s(VW + V.pick[i]), 0.38, 0.11, true);
+  shimmer(s(VW + V.swap[i] + 2), 0.4, 0.09, false);
+  whoosh(s(VW + V.swap[i]), 0.3, 0.12, -0.3, 0.3);
 }
-const DV = S.devices.from;
-C.devices.nodes.forEach((f, i) => chime(s(DV + f), [81, 84, 88][i], 0.06, [-0.2, 0.4, 0.4][i]));
-whoosh(s(DV + C.devices.phone) - 0.1, 0.45, 0.16, 0, 0.3);
-click(s(DV + C.devices.approve), 0.4);
-chime(s(DV + C.devices.approve) + 0.08, 88, 0.06, 0);
-chime(s(DV + C.devices.approve) + 0.17, 93, 0.05, 0);
-chime(s(DV + C.devices.desktop), 84, 0.05, -0.3);
+whoosh(s(VW + V.shrink), 1.3, 0.16, 0.4, -0.4);
 
-// ---------------------------------------------------------------- 96-104 warm
+const DV = S.devices.from;
+const Dv = C.devices;
+tap(s(DV + 2), 0.24, 1.0, 0);
+whoosh(s(DV + Dv.phone), 0.5, 0.22, 0.2, 0.7);
+slamHit(s(DV + 11));
+slamHit(s(DV + 19), 0.8);
+tap(s(DV + 12), 0.14, 2.0, 0);
+tap(s(DV + 22), 0.14, 2.2, 0.5);
+chime(s(DV + Dv.ask), 84, 0.07, 0.6);
+chime(s(DV + Dv.ask) + 0.1, 88, 0.06, 0.6);
+tap(s(DV + Dv.tapOption), 0.3, 1.1, 0.6);
+tap(s(DV + Dv.tapSubmit), 0.3, 1.0, 0.6);
+chime(s(DV + Dv.back), 88, 0.07, 0.5);
+chime(s(DV + Dv.back) + 0.09, 93, 0.06, 0.5);
+tap(s(DV + Dv.back + 14), 0.14, 2.2, 0);
+chime(s(DV + Dv.synced), 84, 0.06, -0.5);
+chime(s(DV + Dv.synced) + 0.1, 91, 0.05, -0.5);
+riser(s(DV + 196), s(DV + Dv.dive + 20), 0.26);
+whoosh(s(DV + Dv.dive + 6), 0.5, 0.26, 0.5, 0);
+
+// ---------------------------------------------------------------- 70-78 bots: the groove keeps going, bells on top
 
 const BT = S.bots.from;
+const B = C.bots;
+groove(s(BT), s(FIN), { clapOn: true, padCut: 2800 });
 const WARM = ["F", "G", "Em", "Am"];
 WARM.forEach((name, k) => {
   const t = s(BT) + k * 2;
-  const ch = CH[name];
-  pad(music, musicSend, 0.45, t - 0.05, t + 2, ch.pad, 0.045, 0.25, 0.8, () => 1800);
-  sub(t, 1.95, ch.root + 12, 0.12);
-  ch.pad.forEach((m, j) => bell(music, musicSend, 0.5, t + j * 0.5, m + 24, 0.075, j % 2 ? 0.35 : -0.35, 1.8, 1.6, 3.5));
-  for (let b = 0; b < 8; b++) hat(t + b * 0.25, b % 2 ? 0.05 : 0.03);
+  CH[name].pad.forEach((m, j) => bell(music, musicSend, 0.5, t + j * 0.25, m + 24, 0.05, j % 2 ? 0.35 : -0.35, 1.2, 1.6, 3.5));
 });
-for (let i = 0; i < 15; i++) {
-  tap(s(BT + C.bots.rise + i * 4 + (i % 3) * 2 + 6), 0.16 - i * 0.006, 1.15 + (i % 4) * 0.08, -0.8 + i * 0.11);
-}
-chime(s(BT + C.bots.varin + 4), 88, 0.08, 0);
-chime(s(BT + C.bots.varin + 4) + 0.1, 93, 0.07, 0);
-[0, 45, 75].forEach((d, i) => tap(s(BT + C.bots.chat + d), 0.22, [1.4, 1.2, 1.25][i], 0.4));
-whoosh(s(BT + C.bots.chat) - 0.3, 0.4, 0.12, 0.2, 0.5);
+for (let i = 0; i < 15; i++) tap(s(BT + B.burst + i * 2 + 2), 0.19 - i * 0.004, 1.1 + i * 0.05, -0.8 + ((i * 7) % 15) / 9);
+impact(s(BT + B.varin), 0.45);
+kick(sfx, s(BT + B.varin), 0.55);
+chime(s(BT + B.varin) + 0.05, 88, 0.08, 0);
+chime(s(BT + B.varin) + 0.15, 93, 0.07, 0);
+slamHit(s(BT + B.varin + 9), 0.8);
+whoosh(s(BT + B.row), 0.45, 0.2, 0.6, -0.6);
+B.chat.forEach((f, i) => tap(s(BT + f), 0.22, [1.4, 1.2, 1.25, 1.3][i], 0.4));
+riser(s(BT + B.push - 10), s(FIN), 0.3);
 
-// ---------------------------------------------------------------- 104-117.5 finale
+// ---------------------------------------------------------------- 78-89.5 finale
 
 const F0 = s(FIN);
 pad(music, musicSend, 0.4, F0 - 0.05, F0 + 2, CH.F.pad, 0.03, 0.2, 0.6, (t) => 900 + 600 * (t - F0));
@@ -638,11 +727,6 @@ sub(HIT3, tailEnd - HIT3 - 0.3, 33, 0.07);
 [69, 72, 76, 83].forEach((m, i) => bell(music, musicSend, 0.6, HIT3 + 0.2 + i * 0.12, m + 12, 0.045, -0.45 + i * 0.3, 3.0, 1.4, 3.5));
 whoosh(s(FIN + C.finale.lock + 6) - 0.1, 0.45, 0.18, -0.5, 0.5);
 sparkle(s(FIN + C.finale.lock + 18), 0.07);
-
-// ---------------------------------------------------------------- wipes between chapters
-
-for (const at of [S.steer.from, S.models.from, S.recover.from, S.devices.from, S.bots.from]) whoosh(s(at) - 0.5, 1.0, 0.2, -0.7, 0.7);
-whoosh(s(S.views.from) - 0.5, 0.9, 0.12, -0.7, 0.7);
 
 // ---------------------------------------------------------------- mix
 
